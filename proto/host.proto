@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package="github.com/cloudprivacylabs/watermelon/server/pb";
+
+message Address {
+  // name associated with this address. primary, primary4, primary6, etc.
+  string Name=1;
+  // The address 
+  string Address=2;
+}
+
+// HostInfo describes a host. 
+message HostInfo {
+  // HostId is the unique identifier for this host. It could be fqdn,
+  // ip, or any other symbolic name
+  string ID=1;
+
+  
+  repeated Address Addresses=3;
+
+  // labels associated with this host
+  repeated string Labels=4;
+
+  // key-value pairs associated with this host
+  map<string,string> Properties=5;
+}
+
+// CommandError
+message CommandError {
+  string Host=1;
+  string Msg=2;
+}

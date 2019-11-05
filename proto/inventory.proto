@@ -1,0 +1,131 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package="github.com/cloudprivacylabs/watermelon/server/pb";
+
+import "host.proto";
+import "empty.proto";
+
+
+// Inventory defines the set of hosts available during a run.
+// An inventory can be populated by multiple methods; it can be
+// read from a file, or it can be discovered using custom backends.
+// 
+
+
+// InvId contains an inventory id
+message InvId {
+  // id identifies a set of hosts. id="all" is the inventory containing
+  // all known hosts
+  string ID=1;
+}
+
+// InvIdRequest contains an inventory id
+message InvIdRequest {
+  // id identifies a set of hosts. id="all" is the inventory containing
+  // all known hosts
+  string ID=1;
+  string Session=2;
+}
+
+// InvSelectRequest is used to select a subset of hosts from an inventory
+message InvSelectRequest {
+  // Select from which inventory
+  string From=1;
+
+  // Describe how to select from the inventory. Hosts
+  // matching all these selectors will be included
+  repeated Selector Sel=3;
+
+  string Session=4;
+}
+
+// LabelSet defines a set of labels to use in a host selector
+message LabelSet {
+  repeated string Labels=1;
+}
+
+// HostIdSet defines a set of host ids to use in a host selector
+message HostIdSet {
+  repeated string IDs=1;
+}
+
+
+// PropertySet defines a set of property key-value pairs to select hosts
+message PropertySet {
+  message KVS {
+    string Key=1;
+    // Select hosts that has any of the given values for the key
+    repeated string Values=2;
+  }
+
+  repeated KVS Properties=1;
+}
+
+// Selector contains one of the host selection methods
+message Selector {
+  oneof select {
+    LabelSet HasAllLabels=1;
+    LabelSet HasAnyLabel=2;
+    LabelSet HasNoneLabels=3;
+    HostIdSet ByID=4;
+    PropertySet HasAnyProperty=6;
+    PropertySet HasAllProperty=7;
+  }
+}
+
+message InvUnionRequest {
+  // Combine these inventories
+  repeated string Sources=1;
+  string Session=2;
+}
+
+// Add a host to inventory
+message InvAddRequest {
+  string Inv=1;
+  HostIdSet Hosts=2;
+  string Session=3;
+}
+
+// HostIds contains a set of host ids
+message HostIds {
+  repeated string HostIds=1;
+  string Session=2;
+}
+
+// HostInfos contains a set of host infos
+message HostInfos {
+  // Requested host information
+  repeated pb.HostInfo HostInfos=1;
+}
+
+
+// Inventory service
+service Inventory {
+  // Selects a subset of an inventory based on the given criteria, and
+  // returns a new inventory id representing the subset
+  rpc Select(InvSelectRequest) returns (InvId);
+
+  // Union takes a union of a set of inventories and returns a new inventory
+  // containing all the hosts in the combined inventories
+  rpc Union(InvUnionRequest) returns (InvId);
+
+  // Make creates a new inventory containing the given hosts
+  rpc Make(HostIds) returns (InvId);
+
+  // Adds new hosts to an inventory
+  rpc Add(InvAddRequest) returns (InvId);
+
+  // Returns the host ids for all the hosts in an inventory
+  rpc GetHostIds(InvIdRequest) returns (HostIds);
+
+  // Returns information about some hosts
+  rpc GetHostInfo(HostIds) returns (HostInfos);
+
+  // Returns all hosts in an inventory
+  rpc GetHosts(InvIdRequest) returns(HostInfos);
+
+  // Release notifies the server that this inventory is no longer needed
+  rpc Release(InvIdRequest) returns(pb.Empty);
+}

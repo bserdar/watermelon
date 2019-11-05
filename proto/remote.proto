@@ -1,0 +1,180 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package="github.com/cloudprivacylabs/watermelon/server/pb";
+
+import "host.proto";
+import "empty.proto";
+
+// Execute a command on a remote host
+message CommandRequest {
+  string session=1;
+  string hostId=2;
+  string command=3;
+}
+
+// Response of a remote command execution
+message CommandResponse {
+  bytes stdout=1;
+  bytes stderr=2;
+  int64 exitCode=3;
+}
+
+message ReadRequest {
+  string session=1;
+  string hostId=2;
+  string file=3;
+}
+
+// ReadResponse is processes as a stream. Only the first received block contains
+// file info, remaining segments only contain the data.
+message ReadResponse {
+  bytes data=1;
+  int64 size=2;
+  FileInfo info=3;
+  bool found=4;
+  pb.CommandError error=5;
+}
+
+// WaitHostRequest is used to wait until host becomes available.
+message WaitHostRequest {
+  string session=1;
+  string hostId=2;
+  int64 timeout=3;
+}
+
+// WriteRequest 
+message WriteRequest {
+  string session=1;
+  string hostId=2;
+  int64 perms=4;
+  string name=6;
+  bool onlyIfDifferent=7;
+
+  oneof source {
+    bytes data=8;
+    TemplateRequest template=9;
+  }
+}
+
+message WriteResponse {
+  bool modified=1;
+  pb.CommandError error=2;
+}
+
+message TemplateRequest {
+  string template=2;
+  bytes data=3;
+}
+
+message TemplateResponse {
+  string out=1;
+  pb.CommandError error=2;
+}
+
+message EnsureRequest {
+  string path=1;
+  
+  int32 mode=3;
+  bool setMode=4;
+  
+  string uid=5;
+  bool setUid=6;
+  
+  string gid=7;
+  bool setGid=8;
+  
+  string user=9;
+  bool setUser=10;
+  
+  string group=11;
+  bool setGroup=12;
+  
+  bool dir=13;
+  bool checkDir=14;
+
+  string session=20;
+  string hostId=21;
+}
+
+message EnsureResponse {
+  bool changed=1;
+  pb.CommandError error=2;
+}
+
+message PathRequest {
+  string session=1;
+  string hostId=2;
+  string path=3;
+}
+
+message ChmodRequest {
+  string session=1;
+  string hostId=2;
+  string path=3;
+  int32 mode=4;
+}
+
+message ChownRequest {
+  string session=1;
+  string hostId=2;
+  string path=3;
+  string user=4;
+  string group=5;
+}
+
+message GetFileInfoResponse {
+  FileOwner owner=1;
+  FileInfo info=2;
+  pb.CommandError error=3;
+}
+
+message OSResponse {
+  pb.CommandError error=1;
+}
+
+message FileOwner {
+  string OwnerName=1;
+  string OwnerID=2;
+  string GroupName=3;
+  string GroupID=4;
+}
+
+message FileInfo {
+  string name=1;
+  int64 size=2;
+  int32 mode=3;
+  int64 time=4;
+  bool dir=5;
+}
+
+message CopyRequest {
+  string session=1;
+  string fromHost=2;
+  string fromPath=3;
+  string toHost=4;
+  string toPath=5;
+  bool onlyIfDifferent=6;
+}
+
+message CopyResponse {
+  bool changed=1;
+  pb.CommandError error=2;
+}
+
+
+// Remote service executes command on a remote host, read and writes files
+service Remote {
+  rpc Command(CommandRequest) returns(CommandResponse);
+  rpc ReadFile(ReadRequest) returns(ReadResponse);
+  rpc WriteFile(WriteRequest) returns(WriteResponse);
+  rpc Template(TemplateRequest) returns(TemplateResponse);
+  rpc CopyFile(CopyRequest) returns(CopyResponse);
+  rpc WaitHost(WaitHostRequest) returns(pb.Empty);
+  rpc GetFileInfo(PathRequest) returns(GetFileInfoResponse);
+  rpc Mkdir(PathRequest) returns(OSResponse);
+  rpc Chmod(ChmodRequest) returns(OSResponse);
+  rpc Chown(ChownRequest) returns(OSResponse);
+  rpc Ensure(EnsureRequest) returns(EnsureResponse);
+}

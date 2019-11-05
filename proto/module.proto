@@ -1,0 +1,139 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package="github.com/cloudprivacylabs/watermelon/server/pb";
+
+import "empty.proto";
+
+
+// A module is an external program that implements functions that can
+// be called by other modules.
+
+// Watermelon server executes a module by passing it its GRPC server address.
+// The module runtime connects to the GRPC servers of the calling server.
+// The module should listen to the stream returned by lifecycle.Connect and
+// respond to pings and term messages.
+
+// The module creates a RequestProcessor GRPC server to accept
+// incoming requests. The port of this server is passed back to the
+// watermelon server as a response to Connect message. Watermelon uses
+// this server to pass requests to the module.
+
+message LifecycleRequest {
+  enum Req {
+     CONNECT=0;
+     TERM=1;
+     PING=2;
+     PONG=3;
+  }
+  Req requestType=1;
+  oneof msg {
+    Connect connectMsg=2;
+  }
+}
+
+// Connect message sent from the module to the server to notify the
+// grpc port listening on the module to receive requests along with the
+// module name.
+message Connect {
+  int32 port=1;
+}
+
+
+// ModuleWorkRequest selects a module to call, and sends a request to that module.
+message ModuleWorkRequest {
+  // Name of the module to call
+  string moduleName=1;
+  // Request contains the function name to call, and the parameters to the function
+  Request req=2;
+}
+
+// LogRequest has the host id and log msg
+message LogRequest {
+  string session=1;
+  string hostId=2;
+  string msg=3;
+}
+
+// Configuration request, using a json pointer
+message CfgRequest {
+  string session=1;
+  string hostId=2;
+  string path=3;
+}
+
+
+// Configuration response, contains JSON document. If the variable is not found, contains
+// nil (empty array)
+message CfgResponse {
+  bytes data=2;
+}
+
+
+message LoadModuleRequest {
+  string module=1;
+}
+
+message LoadModuleResponse {
+  string address=1;
+}
+
+service Lifecycle {
+  // Connect sends the initial request to the server to connect. Then
+  // the module waits for lifecycle management messages from server LifecycleRequest
+  // stream.
+  rpc Connect(stream LifecycleRequest) returns(stream LifecycleRequest);
+  
+  // Make a module call. If the module call runs, but the command returns
+  // an errors (e.g. runs a command on a host, but that command returns error), the
+  // error information is returned in Response. If somehow the execution of
+  // the function fails (e.g. cannot dial to host), that is returned as grpc error.
+  rpc ModuleCall(ModuleWorkRequest) returns(Response);
+
+  // Log for a host
+  rpc Log(LogRequest) returns(pb.Empty);
+  // Print a msg on server console
+  rpc Print(LogRequest) returns(pb.Empty);
+
+  // Get configuration
+  rpc GetCfg(CfgRequest) returns(CfgResponse);
+
+  // Loads a module by its name, and returns the GRPC location for the module
+  // Use this to setup a direct GRPC link to the module
+  rpc LoadModule(LoadModuleRequest) returns(LoadModuleResponse);
+}
+
+
+// Request is a request sent to a function implemented by a module.
+message Request {
+  // The current session ID
+  string session=1;
+  // The function to call in the module
+  string funcName=2;
+  // A JSON document describing the parameters to the function. The structure
+  // of the JSON document depends on the function.
+  bytes data=3;
+}
+
+// Response is returned from a module function. If the module function
+// executes but the result is an error, then the errorMsg field contains
+// that error, but the call returns success. If somehow the module
+// function cannot be called, or if the module function encounters an
+// error that prevents execution, that is returned as error from the function
+message Response {
+  bool success=1;
+  string funcName=2;
+  string errorMsg=3;
+  bool modified=4;
+  bytes data=5;
+}
+
+// RequestProcessor is implemented by the module runtime.
+// It passes requests coming from the server to the functions
+// implemented by the module
+service RequestProcessor {
+  rpc Process(Request) returns(Response);
+}
+
+
