@@ -104,6 +104,9 @@ hosts:
       user: root
       # Password
       password: "pwd01"
+      # This will add "sudo" to all commands, so 
+      # you can login as non-root
+      become: sudo
       
     # Labels assigned to the host. You can selects groups
     # of hosts using their labels
