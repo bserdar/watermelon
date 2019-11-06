@@ -1,21 +1,25 @@
 # Watermelon &nbsp; [![GoDoc](https://godoc.org/github.com/bserdar/watermelon?status.svg)](https://godoc.org/github.com/bserdar/watermelon)
 
 
-Watermelon is an imperative configuration management tool. It lets you
-write configuration scripts using a real programming language to
-manage remote machines. Since you can use any programming language,
-writing scripts with watermelon is similar to writing code to run
-commands, however watermelon hides the details of connecting to those
-machines, running remote commands, moving/copying files remotely. If a
-watermalon script is run for multiple machines, that script can
-execute for all machines simultaneously.
+Watermelon is an imperative infrastructure-as-code tool. You can use a
+regular programming language (as opposed to some specialized scripting
+language) to connect to remote machines, run commands, copy files,
+manage configuration remotely, etc. Watermelon abstracts the details
+of accessing those remote machines. It also abstracts the details of
+calling other scripts (potentially written in other languages) so you
+can reuse existing management code as with minimal refactoring.
 
+Watermelon is easy to integrate with langauge-specific build systems,
+so you can write script in a langauge and execute it without a
+separate build cycle. Watermelon uses shell scripts to build and run
+code.
 
-Watermelon is written in Go, and currently supports configuration
-scripts written in Go. You can write scripts in any language that
-support GRPC by implementing a runtime client for that language. Once
-a runtime is implemented, a script written in one language can call
-the functions written in another language.
+Watermelon executes scripts and communicates with them using gRPC. If
+one script calls another script, that script is also executed and
+watermelon acts as a bridge between the two scripts. Watermelon is
+written in Go, and currently supports configuration scripts written in
+Go. You can write scripts in any language that support gRPC by
+implementing a runtime client for that language. 
 
 ## Install
 
@@ -25,7 +29,7 @@ Use `go get`:
 go get github.com/bserdar/watermelon
 ```
 
-Get modules:
+These are some existing modules you can use:
 
 ```
 git clone github.com/bserdar/watermelon-modules
@@ -40,43 +44,23 @@ export WM_MODULES="~/go/src/github.com/bserdar/watermelon-modules"
 
 ## Running
 
-Use the `wm` executable to run scripts. This is the Watermelon
-server. The server manages connections to remote machines,
-configurations, logging, and provides common functions you can call
-from modules, such as copying files, or executing commands on remote
-nodes. Run the server using:
+Run using:
 
 ```
-wm run --cfg myconfig.yml --inv inventory.yml --mdir /dir-to-modules/watermelon-modules --mdir /other/module/dir someModule.someFunc
+wm run --inv inventory.yml --mdir /dir-to-modules/watermelon-modules --mdir /other/module/dir someModule.someFunc
 ```
 
-This will load `myconfig.yml` as the configuration file, and
-`inventory.yml` as the inventory file. The configuration file is a
-yaml file whose contents can be queried from the running scripts. For
-example, the following will unmarshal the contents of `/myconfig` to `cfg`:
+ * --inv inventory.yml: This will load `inventory.yml` which contains
+host definitions and configuration options. The configuration items
+can be accessed from the running scripts using JSON pointers.
+ * --mdir dir: Each --mdir option will define a directory under which
+   modules can be found. Each module has the name of the last
+   component of the directory it is in.
+ * someModule.someFunc: The function to run. This will build and load
+   the module `someModule` under one of the `--mdir`s, and then
+   execute the function `someFunc` in that module.
+   
 
-```
-session.GetCfg("/myconfig", &cfg)
-```
-
-The inventory defines the remote hosts and how to access
-them. Watermelon hides the details of accessing hosts from the
-scripts. You can run a command, make sure a directory exists, and
-write a remote using a template stored locally as follows:
-
-```
-host.Command("systemctl restart myservice")
-host.Ensure("/etc/myapp/config", client.Ensure{}.EnsureDir())
-changed, err := node.WriteFileFromTemplateFile("/etc/config", 0644, "templates/config", templateData)
-```
-
-
-The `mdir` argument defines module base directories. Watermelon will
-search these directories to locate modules at runtime. Each module is
-a directory under one of these module directories, and the module name
-is the directory name. Each module exports functions that can be
-invoked from the command line, or from other modules. The above
-command will run `someFunc` in a module called `someModule`.
 
 ## Inventory and Configurations
 
@@ -158,6 +142,16 @@ Watermelon merges all configuration files and the contents of the
 configuration tree. You can query individual items using JSON
 pointers, and unmarshal them into structs.
 
+For example, the following
+will unmarshal the contents of JSON location `/endpoint` :
+
+```
+var endpoint string
+session.GetCfg("/endpoint", &endpoint)
+// endpoint is now http://myendpoint
+```
+
+
 Watermelon client runtime provides APIs to access inventory items by
 their labels or ids. For example:
 
@@ -174,14 +168,12 @@ session.ForAllSelected(client.Has("controller"), func(host client.Host) error {
         ...
 ```
         
-
 ## Logs
 
 For each run, Watermelon server creates a log directory containing the
 timestamp of the run. Under that directory, each remote host and if
 you use it `localhost` has separate log files. Any logs generated for
 remote hosts and localhost will be written to its corresponding file.
-
 
 ## Modules
 
@@ -229,17 +221,12 @@ shift
 ## Writing modules
 
 A module is an executable program that communicates with the
-Watermelon server using GRPC. Currently Watermelon has a Go client
+Watermelon server using gRPC. Currently Watermelon has a Go client
 runtime, but other runtimes can be written for any language that
-supports GRPC. Watermelon server executes the module with a host:port
-argument that the module uses to connect to the server. After that the
-module receives requests from the Watermelon server, executes them,
-and sends the results back. The module itself can call other
-modules. Watermelon will locate the called module, build it, run it,
-and pass the call to that module. For this to work, when you write a
-module you have to declare your exported functions to the runtime.
+supports gRPC. Watermelon server executes the module with a host:port
+argument that the module uses to connect to the server. 
 
-
+The following show how this is done in Go:
 ```
 package main
 
@@ -250,38 +237,38 @@ import (
 )
 
 func main() {
-	f := client.Functions{}
-	f.Add("db.Bootstrap", dbBootstrap)
-	f.Add("db.Config", dbConfig)
-
-    f.Add("controller.Bootstrap", controllerBootstrap)
-
-	client.Run(os.Args[1:], f, nil)
+	client.Run(os.Args[1:], nil, nil)
 }
 ```
 
-The above program declares three functions, and assigns names
-to Go functions. Lets say this module is called `mymodule`, when you
-run Watermelon like this:
+
+In order to make a function acessible from other modules, you have to
+*export* it:
 
 ```
-wm run --mdir /mymoduledir mymodule db.Bootstrap
-```
+// Export the function SetupDB as smtp.SetupDB.
+// Callers will have to call this function as module.smtp.SetupDB
+var _ = client.Export("smtp.SetupDB", SetupDB)
 
-Watermelon will locate this module under /mymoduledir/mymodule, build
-it, run it, and then call the `dbBootstrap` function.
-
-
-The `dbBootstrap` function gets a pointer to a client session:
-
-```
-func dbBootstrap(session *client.Session) {
+// The SetupDB function, 
+func SetupDB(session *client.Session) {
+  ...
 }
 ```
 
-Using the client session, dbBootstrap can execute commands in remote
-hosts (or localhost), copy files to/from remote hosts, and do these things
-in parallel for all hosts:
+Exported functions can have one of the following signatures:
+
+```
+func WithInputAndOutput(*Session,InStruct) (OutStruct,error)
+func WithInputOnly(*Session,InStruct) error
+func WithInputNoError(*Session,InStruct)
+func OnlySession(*Session)
+```
+
+The input and output structures must be JSON marshalable.
+
+The `Session` provides the interface to the watermelon server. Using
+the `Session`, the function can select hosts, and run commands on them.
 
 ```
 session.ForAllSelected(client.Has("controller"), func(host client.Host) error {
@@ -300,4 +287,121 @@ session.ForAllSelected(client.Has("controller"), func(host client.Host) error {
   	    changed, err := node.WriteFileFromTemplateFile("/etc/config", 0644, "templates/config", templateData)
   }
 }
+```
+
+You can call an exported function from a module:
+
+```
+response:=session.Call("myModule","smtp.SetupDB",nil)
+if !response.Success {
+   return errors.New(response.ErrorMsg)
+}
+```
+
+If the exported function gets an argument, you have to send an object
+that can be JSON-marshaled:
+
+```
+session.Call("pkg","func",map[string]interface{}{"hostId":host.ID,"pkg":"ntpd"})
+```
+
+### gRPC Bridge
+
+If the target module implements a gRPC server, then you can connect to that gRPC server:
+
+```
+pkgConn, err := session.ConnectModule("pkg")
+if err != nil {
+   return err
+}
+yumCli := yum.NewYumClient(pkgConn)
+yumCli.Ensure(node.S.Context(), &yum.EnsureParams{HostId: host.ID,
+                Pkgs:    []string{"wget", "ntpdate", "iptables-services"},
+                Version: "installed"})
+```
+
+A module can use both exported function and a gRPC server. The Go
+client package has a `GRPCServer` to facilitate this.
+
+
+## Examples
+
+Install ETCD to all nodes if it is not already installed:
+
+```
+func ETCDBootstrap(session *client.Session) {
+  // Select all hosts that are labeled with etcd
+  session.ForAllSelected(client.Has("etcd"), func(host client.Host) error {
+      // This section runs for all hosts with label "etcd" concurrently
+      
+     // Check if etcd already exists
+     rsp := host.Commandf("/usr/local/bin/etcd -version")
+     if strings.Index(string(rsp.Stdout), "etcd Version") == -1 {
+        // Download etcd tarfile to /tmp and install
+        rsp := host.Command("mktemp -d")
+        tempDir := strings.TrimSpace(string(rsp.Stdout))
+        rsp = host.Commandf("wget %s -O %s/tarfile", ETCDTarFile, tempDir)
+        if rsp.ExitCode != 0 {
+          return fmt.Errorf("Cannot wget etcd: %s", string(rsp.Stderr))
+        }
+        // Print log message for this host
+        host.Logf("Downloaded etcd")
+        host.Commandf("sh -c 'cd %s && tar  --strip-components=1 -x -f tarfile && mv etcd* /usr/local/bin'", tempDir)
+     }
+     return nil
+  })
+}
+```
+
+Reset mariadb root password:
+
+```
+func ResetRootPWD(session *client.Session) {
+  // Run this for all hosts labeled with "mariadb"
+  session.ForAllSelected(client.Has("mariadb"), func(host client.Host) error {
+    // Get mariadb root password from host properties in inventory
+    password, ok := host.GetInfo().Properties["mariadb_root_password"]
+    if !ok {
+      return fmt.Errorf("Root password required in mariadb_root_password")
+    }
+    host.Command("systemctl stop mariadb")
+    host.Command(`nohup mysqld_safe --skip-grant-tables </dev/null >/dev/null 2>/dev/null &`)
+    time.Sleep(2 * time.Second)
+    host.Commandf(`cat <<EOF | mysql -u root
+use mysql;
+update user SET PASSWORD=PASSWORD("%s") WHERE USER='root';
+flush privileges;
+exit
+EOF
+`, password)
+    host.Commandf("mysqladmin -u root --password=%s shutdown", rootPwd)
+    host.Command("systemctl start mariadb")
+  })
+}
+```
+
+Write /etc/hosts from a template:
+
+```
+func WriteHosts(session *client.Session) {
+  // For all hosts
+  session.ForAllSelected(client.AllHosts,func(host client.Host) error {
+    // Get host information for all hosts
+    hosts := host.S.GetHosts(client.AllHosts)
+    // Write /etc/hosts from the template. The templates are relative to the module root
+    return node.WriteFileFromTemplateFile("/etc/hosts", 0644, "templates/hosts", hosts)
+  })
+}
+```
+
+where the hosts template is:
+```
+27.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+
+{{range $index,$host := .}}
+{{range .Addresses}}
+{{.Address}} {{$host.ID}}
+{{end -}}
+{{end -}}
 ```
