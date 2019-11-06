@@ -395,7 +395,7 @@ response := node.S.Call("pkg", "yum.Ensure", map[string]interface{}{"hostId": no
 ```
 
 
-When calling a module functio using thr gRPC bridge, make sure you pass in a 
+When calling a module function using thr gRPC bridge, make sure you pass in a 
 context obtained from `session.Context()`:
 ```
 // Using gRPC bridge
