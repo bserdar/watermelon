@@ -177,13 +177,26 @@ remote hosts and localhost will be written to its corresponding file.
 
 ## Modules
 
-You write your configuration scripts as `modules`. The name of the
-module is the last component of the directory it is in. To run a
-module named `myModule`, Watermelon looks at the file
-`<dir>/myModule/module.w` where `<dir>` is one of the directories
-given with the `mdir` command line argument. `module.w` is a script
-that is run with one of `buildrun` or `run` options. It is run in the
-module directory.
+You write your configuration scripts as `modules`. A module is an
+executable program that communicates with the Watermelon server using
+gRPC. Currently Watermelon has a Go client runtime, but other runtimes
+can be written for any language that supports gRPC.
+
+A module source tree should look like the following:
+
+```
+moduleroot/
+   moduleName/
+      module.w
+      ...
+```
+
+The `moduleroot` will be given to `wm` with the `--mdir` flag. Each
+directory with a file called `module.w` is a module, and the module
+name is the directory name it is under.
+
+`module.w` is a shell script that is run in the module directory.
+It can be executed in one of the following forms:
 
 ```
 ./module.w buildrun :port --log <loglevel>
@@ -218,12 +231,8 @@ shift
 ```
 
 
-## Writing modules
 
-A module is an executable program that communicates with the
-Watermelon server using gRPC. Currently Watermelon has a Go client
-runtime, but other runtimes can be written for any language that
-supports gRPC. Watermelon server executes the module with a host:port
+Watermelon server executes the module with a host:port
 argument that the module uses to connect to the server. 
 
 The following show how this is done in Go:
