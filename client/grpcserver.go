@@ -63,7 +63,7 @@ func (s GRPCServer) Dispatch(sessionID string, f, input, output interface{}) err
 }
 
 // SessionFromContext retrieves the session from the GRPC context on
-// the receiving and of a GRPC call
+// the receiving end of a GRPC call
 func (s GRPCServer) SessionFromContext(ctx context.Context) *Session {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {

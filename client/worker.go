@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	grpc "google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 
 	"github.com/bserdar/watermelon/server/pb"
 )
@@ -34,6 +35,7 @@ func (w *WorkServer) Process(ctx context.Context, req *pb.Request) (returnRespon
 		}
 	}()
 
+	w.rt.Printf(req.Session, "Running process for %s", req.FuncName)
 	sess := w.rt.Session(req.Session)
 	// Check if this is one of the declared functions in the module
 	if f, ok := w.Functions[req.FuncName]; ok {
@@ -66,7 +68,9 @@ func (w *WorkServer) Process(ctx context.Context, req *pb.Request) (returnRespon
 					// Pass session ID as grpc metadata in context
 					arg := reflect.New(dataType)
 					json.Unmarshal(req.Data, arg.Interface())
-					result := mth.Call([]reflect.Value{reflect.ValueOf(sess.Context()), arg})
+					inctx := metadata.NewIncomingContext(context.Background(), metadata.Pairs("sid", req.Session))
+
+					result := mth.Call([]reflect.Value{reflect.ValueOf(inctx), arg})
 					// result[0] is the return value, result[1] is error
 					if !result[1].IsNil() {
 						return &pb.Response{Success: false,
