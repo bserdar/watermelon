@@ -314,23 +314,105 @@ that can be JSON-marshaled:
 session.Call("pkg","func",map[string]interface{}{"hostId":host.ID,"pkg":"ntpd"})
 ```
 
-### gRPC Bridge
+### Using gRPC to Export Functions
 
-If the target module implements a gRPC server, then you can connect to that gRPC server:
+You can implement a gRPC server for the modules. The functions
+exported using the gRPC server can be accessed using the
+`session.Call` method as well as using direct gRPC.
+
+To implement the module as a gRPC server, change the main as follows:
 
 ```
+import (
+	"os"
+
+	"google.golang.org/grpc"
+
+	"github.com/bserdar/watermelon-modules/pkg/yum"
+	"github.com/bserdar/watermelon/client"
+)
+
+func main() {
+    // Create the grpc server 
+	yumServer := yum.Server{}
+    // Register the grpc server to runtime 
+	client.Run(os.Args[1:], nil, func(server *grpc.Server, rt *client.Runtime) {
+        // Register the grpc server to the runtime with name "yum".
+        // This allows other modules to call the gRPC functions of this module 
+        // using session.Call("pkg","yum.funcName")
+		rt.RegisterGRPCServer(&yumServer, "yum")
+        
+        // Register the gRPC server to the watermelon runtime gRPC server
+		yum.RegisterYumServer(server, yumServer)
+	})
+}
+```
+
+This does two things: first it registers the gRPC server of the
+implementation to the watermelon client runtime so it can proxy
+non-gRPC calls to the gRPC server functions. Second, it registers a
+gRPC server to the module's gRPC implementation.
+
+The `main` function can register as many gRPC servers as you need.
+
+The actual implementation of the module functions is as follows:
+
+```
+package yum
+
+import (
+	"github.com/bserdar/watermelon/client"
+	"github.com/bserdar/watermelon/server/pb"
+)
+
+// This is the gRPC server for the yum module
+type Server struct {
+	client.GRPCServer
+}
+
+// The gRPC implementation of the Install function
+func (s Server) Install(ctx context.Context, req *PackageParams) (*pb.Response, error) {
+    // Get the watermelon session from the server
+	session := s.SessionFromContext(ctx)
+    // Do the work
+    ...
+    // Return the response
+	return &pb.Response{Data: stdout, ErrorMsg: stderr, Modified: true}, nil
+}
+```
+
+The session information is send using gRPC metadata, and
+`s.SessionFromContext(ctx)` retrieves that.
+
+If a module implements a gRPC server, then you can call the functions
+either by `session.Call`, or by the gRPC bridge:
+
+```
+// Using session.Call
+response := node.S.Call("pkg", "yum.Ensure", map[string]interface{}{"hostId": node.ID,
+  "pkgs":    []string{"mongodb-org", "firewalld"},
+  "version": "installed"})
+```
+
+
+When calling a module functio using thr gRPC bridge, make sure you pass in a 
+context obtained from `session.Context()`:
+```
+// Using gRPC bridge
+
+// This will load the "pkg" module, and return a gRPC connection to it
 pkgConn, err := session.ConnectModule("pkg")
 if err != nil {
    return err
 }
 yumCli := yum.NewYumClient(pkgConn)
+// You have to pass in the context you obtained from the session, otherwise the
+// receiving end will not receive session info
 yumCli.Ensure(node.S.Context(), &yum.EnsureParams{HostId: host.ID,
                 Pkgs:    []string{"wget", "ntpdate", "iptables-services"},
                 Version: "installed"})
 ```
 
-A module can use both exported function and a gRPC server. The Go
-client package has a `GRPCServer` to facilitate this.
 
 
 ## Examples
