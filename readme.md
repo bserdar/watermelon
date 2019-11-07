@@ -1,25 +1,43 @@
 # Watermelon &nbsp; [![GoDoc](https://godoc.org/github.com/bserdar/watermelon?status.svg)](https://godoc.org/github.com/bserdar/watermelon)
 
 
-Watermelon is an imperative infrastructure-as-code tool. You can use a
-regular programming language (as opposed to some specialized scripting
-language) to connect to remote machines, run commands, copy files,
-manage configuration remotely, etc. Watermelon abstracts the details
-of accessing those remote machines. It also abstracts the details of
-calling other scripts (potentially written in other languages) so you
-can reuse existing management code as with minimal refactoring.
+Watermelon is a tool for building infrastructure as code. It lets you
+use a regular programming language (as opposed to some specialized
+scripting language) to connect to remote machines, run commands, copy
+files to manage configuration remotely. Watermelon abstracts the
+details of accessing those remote machines. 
 
-Watermelon is easy to integrate with langauge-specific build systems,
-so you can write script in a langauge and execute it without a
-separate build cycle. Watermelon uses shell scripts to build and run
-code.
+Watermelon is written in Go, and currently supports infrostructure
+code written in Go. When you write infrastructure code (a *module*),
+you import the watermelon client package that provides the runtime for
+your code. Using the client, you can write code that looks like this:
 
-Watermelon executes scripts and communicates with them using gRPC. If
-one script calls another script, that script is also executed and
-watermelon acts as a bridge between the two scripts. Watermelon is
-written in Go, and currently supports configuration scripts written in
-Go. You can write scripts in any language that support gRPC by
-implementing a runtime client for that language. 
+```
+func OpenPorts(session *client.Session) {
+  session.ForAllSelected(client.Has("smtp"), func(host client.Host) error {
+    for _, p := range PORTS {
+      host.Commandf("firewall-cmd --permanent --add-port=%d/tcp", p)
+    }
+    host.Command("firewall-cmd --reload")
+    return nil
+  })
+}
+```
+
+
+This piece of code opens some ports on all hosts labeled with `smtp`
+using `firwall-cmd`.
+
+Watermelon communicates with the modules you write using gRPC and
+JSON. When you run your infrastructure code, watermelon builds your
+code, runs it, and communicates with it over gRPC. You don't need to
+build your code separately.
+
+From your module, you can call the functions provided by the client
+library as well as functions in other modules. The other modules can
+be written in languages other than Go, provided there is a client
+runtime for that language.
+
 
 ## Install
 
