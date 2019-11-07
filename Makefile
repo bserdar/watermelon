@@ -1,7 +1,7 @@
 PREFIX?=$(shell pwd)
 
 .DEFAULT: all
-all: wm test
+all: watermelon test
 
 # Package list
 PKGS=$(shell go list  ./cmd/... ./server/...|  grep -v test )
@@ -35,9 +35,9 @@ fmt:
 	@test -z "$$(gofmt -s -l client 2>&1 |  tee /dev/stderr)" || \
 		(echo >&2 "+ please format Go code with 'gofmt -s'" && false)
 
-wm: proto fmt vet
+watermelon: proto fmt vet
 	@echo "+ $@"
-	@go build -o wm main.go
+	@go build -o watermelon main.go
 
 .PHONY: test
 test:
@@ -47,5 +47,5 @@ test:
 .PHONY: clean
 clean:
 	@echo "+ $@"
-	rm wm
+	rm watermelon
 

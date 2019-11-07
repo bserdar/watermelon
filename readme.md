@@ -59,7 +59,7 @@ These are some existing modules you can use:
 git clone github.com/bserdar/watermelon-modules
 ```
 
-You will need to pass the directory of these modules to `wm` to use
+You will need to pass the directory of these modules to `watermelon` to use
 them, or define WM_MODULES environment variable:
 
 ```
@@ -73,7 +73,7 @@ Using watermelon you run functions exported in modules.
 Run watermelon using:
 
 ```
-wm run --inv inventory.yml --mdir /dir-to-modules/watermelon-modules --mdir /other/module/dir someModule someFunc
+watermelon run --inv inventory.yml --mdir /dir-to-modules/watermelon-modules --mdir /other/module/dir someModule someFunc
 ```
 
  * --inv inventory.yml: This will load `inventory.yml` which contains
@@ -220,7 +220,7 @@ moduleroot/
       ...
 ```
 
-The `moduleroot` will be given to `wm` with the `--mdir` flag. Each
+The `moduleroot` will be given to `watermelon` with the `--mdir` flag. Each
 directory with a file called `module.w` is a module, and the module
 name is the directory name it is under.
 
