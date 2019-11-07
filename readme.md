@@ -41,8 +41,8 @@ runtime for that language.
 
 Watermelon is procedural, not declarative. However, if you can write
 idempotent infrastructure code, you can use it as a declarative tool
-as well. It is very hard to write declararive rules for things such as
-run a command, reboot, then install more stuff.
+as well. It is very hard to write declarative rules for things such as
+install packages, reboot, then continue with other tasks.
 
 
 ## Install
@@ -206,9 +206,9 @@ remote hosts and localhost will be written to its corresponding file.
 
 ## Modules
 
-You write your configuration scripts as `modules`. A module is an
-executable program that communicates with the Watermelon server using
-gRPC. Currently Watermelon has a Go client runtime, but other runtimes
+You write your infrastructure code as `modules`. A module is an
+executable program that communicates with the watermelon server using
+gRPC. Currently watermelon has a Go client runtime, but other runtimes
 can be written for any language that supports gRPC.
 
 A module source tree should look like the following:
