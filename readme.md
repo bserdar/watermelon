@@ -7,7 +7,7 @@ scripting language) to connect to remote machines, run commands, copy
 files to manage configuration remotely. Watermelon abstracts the
 details of accessing those remote machines. 
 
-Watermelon is written in Go, and currently supports infrostructure
+Watermelon is written in Go, and currently supports infrastructure
 code written in Go. When you write infrastructure code (a *module*),
 you import the watermelon client package that provides the runtime for
 your code. Using the client, you can write code that looks like this:
@@ -26,17 +26,23 @@ func OpenPorts(session *client.Session) {
 
 
 This piece of code opens some ports on all hosts labeled with `smtp`
-using `firwall-cmd`.
+using `firewall-cmd`.
 
 Watermelon communicates with the modules you write using gRPC and
 JSON. When you run your infrastructure code, watermelon builds your
 code, runs it, and communicates with it over gRPC. You don't need to
-build your code separately.
+build your code separately. This lets you work with your infrastructure
+code as if it is a script--you can write code, and run it.
 
 From your module, you can call the functions provided by the client
 library as well as functions in other modules. The other modules can
 be written in languages other than Go, provided there is a client
 runtime for that language.
+
+Watermelon is procedural, not declarative. However, if you can write
+idempotent infrastructure code, you can use it as a declarative tool
+as well. It is very hard to write declararive rules for things such as
+run a command, reboot, then install more stuff.
 
 
 ## Install
@@ -62,10 +68,12 @@ export WM_MODULES="~/go/src/github.com/bserdar/watermelon-modules"
 
 ## Running
 
-Run using:
+Using watermelon you run functions exported in modules. 
+
+Run watermelon using:
 
 ```
-wm run --inv inventory.yml --mdir /dir-to-modules/watermelon-modules --mdir /other/module/dir someModule.someFunc
+wm run --inv inventory.yml --mdir /dir-to-modules/watermelon-modules --mdir /other/module/dir someModule someFunc
 ```
 
  * --inv inventory.yml: This will load `inventory.yml` which contains
@@ -74,9 +82,9 @@ can be accessed from the running scripts using JSON pointers.
  * --mdir dir: Each --mdir option will define a directory under which
    modules can be found. Each module has the name of the last
    component of the directory it is in.
- * someModule.someFunc: The function to run. This will build and load
-   the module `someModule` under one of the `--mdir`s, and then
-   execute the function `someFunc` in that module.
+ * someModule someFunc: The module and function to run. This will
+   build and load the module `someModule` under one of the `--mdir`s,
+   and then execute the function `someFunc` in that module.
    
 
 
