@@ -94,7 +94,7 @@ func (h Host) CopyFromLocal(fromPath, toPath string) error {
 	return h.S.CopyFile(LocalhostID, fromPath, h.ID, toPath)
 }
 
-// CopyFromLocalToIfDifferent copies a file from local to h if different
+// CopyFromLocalIfDifferent copies a file from local to h if different
 func (h Host) CopyFromLocalIfDifferent(fromPath, toPath string) (bool, error) {
 	return h.S.CopyFromLocalIfDifferent(fromPath, h.ID, toPath)
 }

@@ -38,6 +38,8 @@ type Inventory interface {
 	Release(string)
 }
 
+// InternalInentory adds additional functions to the basic inventory
+// interface for server use only.
 type InternalInventory interface {
 	Inventory
 

@@ -5,6 +5,8 @@ import (
 	"sync"
 )
 
+// SessionFactory should be set in main to create new instances of
+// session configured using the flags or config file(s)
 var SessionFactory func() Session
 
 // Session interface
@@ -35,6 +37,7 @@ type sessionRegistry struct {
 	Sessions map[string]Session
 }
 
+// Sessions keeps all active sessions
 var Sessions = sessionRegistry{Sessions: map[string]Session{}}
 
 // NewSession creates a new empty session

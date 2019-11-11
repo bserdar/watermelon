@@ -31,6 +31,7 @@ func Become(host *server.Host, in string) string {
 	return in
 }
 
+// BecomeSCP configures the scp to run with sudo
 func BecomeSCP(host *server.Host, in *scp.SCP) *scp.SCP {
 	if host.Become == "sudo" {
 		return scpBecomeSudo(in)

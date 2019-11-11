@@ -23,6 +23,7 @@ type Inventory struct {
 	Labels         map[string][]string `yaml:"labels,omitempty"`
 }
 
+// SSH specifics
 type SSH struct {
 	Hostname string `yaml:"hostname"`
 	Network  string `yaml:"network"`

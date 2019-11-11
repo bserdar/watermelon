@@ -64,12 +64,14 @@ type Ensure struct {
 	Dir   *bool
 }
 
+// EnsureDir returns a copy of e with dir flag set
 func (e Ensure) EnsureDir() Ensure {
 	t := true
 	e.Dir = &t
 	return e
 }
 
+// EnsureMode returns a copy of e with mode set
 func (e Ensure) EnsureMode(mode int) Ensure {
 	e.Mode = &mode
 	return e

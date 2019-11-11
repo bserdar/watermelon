@@ -6,11 +6,12 @@ import (
 
 var interactionMutex = sync.Mutex{}
 
-// LockForInteraction prevents multiple goroutines from entering interaction
+// LockForInteraction prevents multiple goroutines from entering user interaction
 func LockForInteraction() {
 	interactionMutex.Lock()
 }
 
+// UnlockForInteraction unlocks the interaction lock
 func UnlockForInteraction() {
 	interactionMutex.Unlock()
 }

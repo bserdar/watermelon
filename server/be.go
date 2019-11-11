@@ -30,7 +30,7 @@ type HostSession interface {
 
 var backends = map[string]func(*Host) HostBackend{}
 
-// Register a new backend
+// RegisterBackend registers a new backend
 func RegisterBackend(name string, b func(*Host) HostBackend) {
 	backends[name] = b
 }

@@ -12,6 +12,9 @@ import (
 	"github.com/bserdar/watermelon/server"
 )
 
+// Logging is the factory for host-specific loggers. Configure this
+// with the logdir, so the loggers for each host can create separate
+// log files under that dir.
 type Logging struct {
 	Logdir string
 }
