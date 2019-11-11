@@ -1,4 +1,4 @@
-# Watermelon &nbsp; [![GoDoc](https://godoc.org/github.com/bserdar/watermelon?status.svg)](https://godoc.org/github.com/bserdar/watermelon) [![Go Report Card](https://goreportcard.com/report/github.com/bserdar/watermelon)](https://goreportcard.com/report/github.com/bserdar/watermelon)
+# Watermelon &nbsp; [![GoDoc](https://godoc.org/github.com/bserdar/watermelon?status.svg)](https://godoc.org/github.com/bserdar/watermelon) [![Go Report](https://goreportcard.com/report/github.com/bserdar/watermelon)](https://goreportcard.com/report/github.com/bserdar/watermelon)
 
 
 
