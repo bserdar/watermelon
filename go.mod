@@ -7,7 +7,7 @@ require (
 	github.com/dustin/gojson v0.0.0-20160307161227-2e71ec9dd5ad // indirect
 	github.com/golang/protobuf v1.3.2
 	github.com/google/uuid v1.1.1
-	github.com/hnakamur/go-scp v0.0.0-20190410043705-badb3bf1aae2
+	github.com/hnakamur/go-scp v0.0.0-00010101000000-000000000000
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/cobra v0.0.5
 	golang.org/x/crypto v0.0.0-20191105034135-c7e5f84aec59
@@ -16,4 +16,4 @@ require (
 	gopkg.in/yaml.v2 v2.2.5
 )
 
-replace github.com/hnakamur/go-scp => ./vendor/github.com/hnakamur/go-scp
+replace github.com/hnakamur/go-scp => github.com/bserdar/go-scp v0.0.0-20191105202900-0f132463c425
