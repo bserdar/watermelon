@@ -90,7 +90,6 @@ func (s *Session) Run(cmd string, env map[string]string) (server.HostCommandResp
 	if e != nil {
 		if c, ok := e.(*exec.ExitError); ok {
 			statusCode = c.ProcessState.ExitCode()
-			e = nil
 		} else {
 			return server.HostCommandResponse{}, e
 		}
