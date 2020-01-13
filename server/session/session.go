@@ -14,12 +14,13 @@ import (
 type Session struct {
 	sync.RWMutex
 
-	ID        string
-	Inv       server.InternalInventory
-	Modules   server.ModuleMgr
-	Log       server.Logging
-	LogStdout bool
-	Config    interface{}
+	ID         string
+	Inv        server.InternalInventory
+	Modules    server.ModuleMgr
+	Log        server.Logging
+	LogStdout  bool
+	Config     interface{}
+	Extensions map[string]Extension
 }
 
 var sessionCtr = 0
@@ -27,7 +28,22 @@ var sessionCtr = 0
 // Factory creates sessions
 func Factory() server.Session {
 	sessionCtr++
-	return &Session{ID: fmt.Sprintf("s-%d", sessionCtr)}
+	return &Session{ID: fmt.Sprintf("s-%d", sessionCtr), Extensions: map[string]Extension{}}
+}
+
+func (s *Session) getExtension(str string) Extension {
+	s.Lock()
+	extension, ok := s.Extensions[str]
+	if !ok {
+		extensionFactory, ok := Extensions[str]
+		if !ok {
+			panic(fmt.Sprintf("Unknown extension: %s", str))
+		}
+		extension = extensionFactory(s)
+		s.Extensions[str] = extension
+	}
+	s.Unlock()
+	return extension
 }
 
 // GetID returns session ID
@@ -85,8 +101,8 @@ func (s *Session) GetHost(hostID string) (*server.Host, error) {
 	return host[0], nil
 }
 
-// GetCfg returns a path from cfg, either seen by host, or global config
-func (s *Session) GetCfg(hostId, path string) interface{} {
+// getCfg returns a path from cfg, either seen by host, or global config
+func (s *Session) getCfg(hostId, path string) interface{} {
 	var cfg interface{}
 
 	log.Debugf("GetCfg with host=%s path=%s", hostId, path)
@@ -124,4 +140,63 @@ func (s *Session) GetCfg(hostId, path string) interface{} {
 		return nil
 	}
 	return ret
+}
+
+// GetCfg returns a path from cfg, either seen by host, or global config
+func (s *Session) GetCfg(hostId, path string) interface{} {
+	log.Debugf("getCfg %s with host %s", path, hostId)
+	ret := s.getCfg(hostId, path)
+	if ret == nil {
+		log.Debugf("cfg %s not found in %s", path, hostId)
+		return ret
+	}
+	return s.ExpandConfig(ret)
+}
+
+func (s *Session) ExpandConfig(in interface{}) interface{} {
+	// Expand config recursively
+	if m, ok := in.(map[string]interface{}); ok {
+		out := make(map[string]interface{})
+		for k, v := range m {
+			if k == "valueFrom" {
+				return s.ExpandRef(v)
+			} else {
+				out[k] = s.ExpandConfig(v)
+			}
+		}
+		return out
+	}
+	if a, ok := in.([]interface{}); ok {
+		out := make([]interface{}, 0)
+		for _, x := range a {
+			out = append(out, s.ExpandConfig(x))
+		}
+		return out
+	}
+	return in
+}
+
+// ExpandRef expands the configuration value using an extension if there is a mathching one
+func (s *Session) ExpandRef(in interface{}) interface{} {
+	log.Debugf("Expanding cfg reference %v", in)
+	m, ok := in.(map[string]interface{})
+	if !ok {
+		return in
+	}
+	t, ok := m["type"]
+	if !ok {
+		return in
+	}
+	str, ok := t.(string)
+	if !ok {
+		return in
+	}
+
+	extension := s.getExtension(str)
+
+	expander, ok := extension.(ConfigExpander)
+	if !ok {
+		panic(fmt.Sprintf("Extension %s cannot deal with configuration", str))
+	}
+	return expander.ExpandConfig(in)
 }
