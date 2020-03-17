@@ -43,6 +43,11 @@ func (s Session) Printf(format string, args ...interface{}) {
 	s.Rt.Printf(s.ID, format, args...)
 }
 
+// GetArgs returns args to the main program
+func (s Session) GetArgs() []string {
+	return s.Rt.GetArgs(s.ID)
+}
+
 // LoadModule loads a module and returns its GRPC location
 func (s *Session) LoadModule(module string) (string, error) {
 	return s.Rt.LoadModule(module)

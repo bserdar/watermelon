@@ -136,6 +136,14 @@ func (rt *Runtime) Printf(session string, format string, args ...interface{}) {
 	rt.LCClient.Print(context.Background(), &pb.LogRequest{Session: session, Msg: msg})
 }
 
+func (rt *Runtime) GetArgs(session string) []string {
+	ret, _ := rt.LCClient.GetArgs(context.Background(), &pb.Session{Session: session})
+	if ret != nil {
+		return ret.Args
+	}
+	return []string{}
+}
+
 // Args can be used to pass values to a function
 type Args map[string]interface{}
 

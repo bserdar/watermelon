@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package pb;
 
-option go_package="github.com/cloudprivacylabs/watermelon/server/pb";
+option go_package="github.com/bserdar/watermelon/server/pb";
 
 import "empty.proto";
 
@@ -79,6 +79,14 @@ message LoadModuleResponse {
   string address=1;
 }
 
+message Session {
+  string session=1;
+}
+
+message Args {
+  repeated string args=1;
+}
+
 service Lifecycle {
   // Connect sends the initial request to the server to connect. Then
   // the module waits for lifecycle management messages from server LifecycleRequest
@@ -98,6 +106,8 @@ service Lifecycle {
 
   // Get configuration
   rpc GetCfg(CfgRequest) returns(CfgResponse);
+  // Get arguments to the program
+  rpc GetArgs(Session) returns(Args);
 
   // Loads a module by its name, and returns the GRPC location for the module
   // Use this to setup a direct GRPC link to the module

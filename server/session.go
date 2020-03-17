@@ -30,6 +30,8 @@ type Session interface {
 	SetLog(Logging)
 	GetConfig() interface{}
 	SetConfig(interface{})
+	SetArgs([]string)
+	GetArgs() []string
 }
 
 type sessionRegistry struct {

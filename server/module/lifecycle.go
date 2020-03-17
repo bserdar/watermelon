@@ -175,6 +175,15 @@ func (mgr *LifecycleManager) Print(ctx context.Context, req *pb.LogRequest) (*pb
 	return &pb.Empty{}, nil
 }
 
+// GetArgs returns the args to the program
+func (mgr *LifecycleManager) GetArgs(ctx context.Context, req *pb.Session) (*pb.Args, error) {
+	session := server.GetSession(req.Session)
+	if session == nil {
+		return nil, fmt.Errorf("Invalid session %s", req.Session)
+	}
+	return &pb.Args{Args: session.GetArgs()}, nil
+}
+
 // GetCfg returns a configuration item by name
 func (mgr *LifecycleManager) GetCfg(ctx context.Context, req *pb.CfgRequest) (*pb.CfgResponse, error) {
 	log.Debugf("GetCfg %s", req.Path)

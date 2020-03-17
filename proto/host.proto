@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package pb;
 
-option go_package="github.com/cloudprivacylabs/watermelon/server/pb";
+option go_package="github.com/bserdar/watermelon/server/pb";
 
 message Address {
   // name associated with this address. primary, primary4, primary6, etc.

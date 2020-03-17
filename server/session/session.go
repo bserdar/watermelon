@@ -21,6 +21,7 @@ type Session struct {
 	LogStdout  bool
 	Config     interface{}
 	Extensions map[string]Extension
+	Args       []string
 }
 
 var sessionCtr = 0
@@ -72,6 +73,12 @@ func (s *Session) GetConfig() interface{} { return s.Config }
 
 // SetConfig sets the configuration
 func (s *Session) SetConfig(i interface{}) { s.Config = i }
+
+// SetArgs sets args
+func (s *Session) SetArgs(args []string) { s.Args = args }
+
+// GetArgs returns args
+func (s *Session) GetArgs() []string { return s.Args }
 
 // Close a session
 func (s *Session) Close() {

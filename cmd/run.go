@@ -44,9 +44,9 @@ func init() {
 // runCmd runs a module
 var runCmd = &cobra.Command{
 	Use:   "run",
-	Short: "Run a module",
-	Long:  `Run a module.`,
-	Args:  cobra.RangeArgs(1, 2),
+	Short: "Run a function in a package",
+	Long:  `Run a function in a package. Pass the package name, function name, and any additional args`,
+	Args:  cobra.MinimumNArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 
 		moduleDirs := strings.Split(os.Getenv("WM_MODULES"), fmt.Sprint(os.PathListSeparator))
@@ -117,13 +117,9 @@ var runCmd = &cobra.Command{
 		// Give the server a chance to start
 		time.Sleep(time.Millisecond * 100)
 
-		callFunc := "main"
-		if len(args) == 2 {
-			callFunc = args[1]
-		}
-		// Run the module
-		log.Debugf("Calling %s.%s", args[0], callFunc)
-		_, err = session.GetModules().SendRequest(session.GetID(), args[0], callFunc, nil)
+		// Run the module, with optional args
+		log.Debugf("Calling %s.%s", args[0], args[1])
+		_, err = session.GetModules().SendRequest(session.GetID(), args[0], args[1], nil)
 		log.Debugf("Result of main: %v", err)
 		if err != nil {
 			log.Errorf(err.Error())
