@@ -118,6 +118,7 @@ var runCmd = &cobra.Command{
 		time.Sleep(time.Millisecond * 100)
 
 		// Run the module, with optional args
+		session.SetArgs(args[2:])
 		log.Debugf("Calling %s.%s", args[0], args[1])
 		_, err = session.GetModules().SendRequest(session.GetID(), args[0], args[1], nil)
 		log.Debugf("Result of main: %v", err)
