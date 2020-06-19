@@ -1,13 +1,13 @@
 module github.com/bserdar/watermelon
 
-go 1.13
+go 1.14
 
 require (
 	github.com/dustin/go-jsonpointer v0.0.0-20160814072949-ba0abeacc3dc
 	github.com/dustin/gojson v0.0.0-20160307161227-2e71ec9dd5ad // indirect
 	github.com/golang/protobuf v1.3.2
 	github.com/google/uuid v1.1.1
-	github.com/hnakamur/go-scp v0.0.0-00010101000000-000000000000
+	github.com/hnakamur/go-scp v0.0.0-20200530092515-a8beb588f76f
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/cobra v0.0.5
 	golang.org/x/crypto v0.0.0-20191105034135-c7e5f84aec59
@@ -15,5 +15,3 @@ require (
 	google.golang.org/grpc v1.24.0
 	gopkg.in/yaml.v2 v2.2.5
 )
-
-replace github.com/hnakamur/go-scp => github.com/bserdar/go-scp v0.0.0-20191105202900-0f132463c425
